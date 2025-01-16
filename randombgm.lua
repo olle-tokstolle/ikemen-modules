@@ -73,16 +73,16 @@ local function get_random_song(path)
 end
 
 -- store the original playBGM function from main.lua
-local originalPlayBGM = main.f_playBGM
+local original_PlayBGM = main.f_playBGM
 
 -- put a wrapper around the original function that allows the usage of the defined keywords
 main.f_playBGM = function(interrupt, bgm, bgmLoop, bgmVolume, bgmLoopstart, bgmLoopend)
     if keyword_map[bgm] then
         local random_song = get_random_song(keyword_map[bgm])
         if random_song then
-            originalPlayBGM(interrupt, random_song, bgmLoop, bgmVolume, bgmLoopstart, bgmLoopend)
+            original_PlayBGM(interrupt, random_song, bgmLoop, bgmVolume, bgmLoopstart, bgmLoopend)
+            return
         end
-        return
     end
-    originalPlayBGM(interrupt, bgm, bgmLoop, bgmVolume, bgmLoopstart, bgmLoopend)
+    original_PlayBGM(interrupt, bgm, bgmLoop, bgmVolume, bgmLoopstart, bgmLoopend)
 end
