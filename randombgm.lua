@@ -39,6 +39,9 @@ local keyword_map = {
     random_vs_music = VS_MUSIC_PATH
 }
 
+-- prepare a table for storing cached file searches to avoid repeating the same search multiple times
+local file_cache = {}
+
 -- a function to check for valid file extensions
 local function has_valid_extension(file)
     return file:lower():match("%.mp3$") or file:lower():match("%.ogg$") or file:lower():match("%.wav$")
@@ -46,30 +49,38 @@ end
 
 -- a function to get a random valid file from a folder
 local function get_random_song(path)
-    local files = {}
-    local command
 
-    -- detect operating system
-    if package.config:sub(1, 1) == "\\" then
-        -- windows
-        command = 'dir "' .. path .. '" /b /a-d'
-    else
-        -- macOS/linux
-        command = 'ls -p "' .. path .. '" | grep -v /'
-    end
+    if not file_cache[path] then
+        file_cache[path] = {}
+        local command
 
-    -- get all valid files
-    for file in io.popen(command):lines() do
-        if has_valid_extension(file) then
-            table.insert(files, path .. "/" .. file)
+        -- detect operating system
+        if package.config:sub(1, 1) == "\\" then
+            -- windows
+            path = path:gsub("/", "\\")
+            if path:find(" ") then
+                command = 'dir "' .. path .. '" /b'
+            else
+                command = 'dir ' .. path .. ' /b'
+            end
+        else
+            -- unix
+            command = 'ls -p "' .. path .. '" | grep -v /'
+        end
+
+        -- get all valid files
+        for file in io.popen(command):lines() do
+            if has_valid_extension(file) then
+                table.insert(file_cache[path], path .. "/" .. file)
+            end
         end
     end
 
-    if #files == 0 then
+    if #file_cache[path] == 0 then
         return nil
     end
     
-    return files[math.random(#files)]
+    return file_cache[path][math.random(#file_cache[path])]
 end
 
 -- store the original playBGM function from main.lua
